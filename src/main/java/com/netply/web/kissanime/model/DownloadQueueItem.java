@@ -1,23 +1,27 @@
 package com.netply.web.kissanime.model;
 
-import com.netply.web.kissanime.DownloadQueueManager;
-
 public class DownloadQueueItem {
-    private final DownloadQueueManager downloadQueueManager;
+    private long id;
     private final String outputDir;
     private final String episodeURL;
     private final String episodeName;
 
 
-    public DownloadQueueItem(DownloadQueueManager downloadQueueManager, String outputDir, String episodeURL, String episodeName) {
-        this.downloadQueueManager = downloadQueueManager;
+    public DownloadQueueItem(long id, String episodeURL, String episodeName, String outputDir) {
+        this.id = id;
         this.outputDir = outputDir;
         this.episodeURL = episodeURL;
         this.episodeName = episodeName;
     }
 
-    public DownloadQueueManager getDownloadQueueManager() {
-        return downloadQueueManager;
+    public DownloadQueueItem(String episodeURL, String episodeName, String outputDir) {
+        this.outputDir = outputDir;
+        this.episodeURL = episodeURL;
+        this.episodeName = episodeName;
+    }
+
+    public long getId() {
+        return id;
     }
 
     public String getOutputDir() {

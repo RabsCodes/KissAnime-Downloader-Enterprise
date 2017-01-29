@@ -1,10 +1,14 @@
 package com.netply.web.kissanime;
 
+import com.netply.web.kissanime.db.AnimeQueueManager;
+import com.netply.web.kissanime.db.AnimeQueueManagerImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.sql.SQLException;
 
 @Configuration
 @EnableAsync
@@ -33,7 +37,12 @@ public class KissAnimeAppConfig {
 
 
     @Bean
-    public KissAnimeSearchClient kissAnimeSearchClient() {
-        return KissAnimeWebRunner.getInstance();
+    public KissAnimeSearchClient kissAnimeSearchClient() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException {
+        return new KissAnimeWebRunner(animeQueueManager());
+    }
+
+    @Bean
+    public AnimeQueueManager animeQueueManager() throws ClassNotFoundException, SQLException, InstantiationException, IllegalAccessException {
+        return new AnimeQueueManagerImpl(mysqlIp, mysqlPort, mysqlDb, mysqlUser, mysqlPassword);
     }
 }

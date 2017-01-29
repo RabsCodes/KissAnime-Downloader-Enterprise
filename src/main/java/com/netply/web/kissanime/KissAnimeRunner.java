@@ -3,12 +3,12 @@ package com.netply.web.kissanime;
 import com.netply.web.kissanime.data.Credentials;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @SpringBootApplication(scanBasePackages = {
-        "com.netply.web.security.login.controller",
         "com.netply.web.kissanime"
 })
 public class KissAnimeRunner {
@@ -18,11 +18,9 @@ public class KissAnimeRunner {
         if (Credentials.USERNAME == null || Credentials.PASSWORD == null) {
             throw new RuntimeException("KA_USER or KA_PASS environment variable not set");
         }
-        KissAnimeWebRunner kissAnimeWebRunner = KissAnimeWebRunner.getInstance();
-
-        kissAnimeWebRunner.startQueueThread();
 
         Logger.getGlobal().setLevel(Level.ALL);
-        SpringApplication.run(KissAnimeRunner.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(KissAnimeRunner.class, args);
+        context.getBean(AnimeThreadManager.class).startQueueThread();
     }
 }
