@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchClient {
     public static final String KISSANIME_HOST = "http://kissanime.ru";
     public static final int MAX_CONCURRENT_DOWNLOADING_ITEMS = 10;
-    private static final boolean USE_ASYNC_DOWNLOADER = true;
     private static KissAnimeWebRunner instance;
     private BlockingDeque<DownloadQueueItem> downloadQueue = new LinkedBlockingDeque<>();
     private BlockingDeque<Anime> animeQueue = new LinkedBlockingDeque<>();
@@ -233,17 +232,6 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
         List<WebElement> linkList = driver.findElements(episodeLinks);
         Collections.reverse(linkList);
 
-        String downloadListFileName = "download_list_files" + File.separator + animeURLSuffix + ".dl";
-        FileOutputStream fileOutputStream;
-        if (!USE_ASYNC_DOWNLOADER) {
-            File downloadListFile = new File(downloadListFileName);
-            if (downloadListFile.exists()) {
-                downloadListFile.delete();
-            }
-            downloadListFile.createNewFile();
-            fileOutputStream = new FileOutputStream(downloadListFile);
-        }
-
         List<Pair<String, String>> episodeDownloadLinkList = linkList.stream().map(webElement -> {
             String title = webElement.getText();
             String episodeURL = webElement.getAttribute("href");
@@ -262,15 +250,7 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
         String animeOutputDir = getAnimeOutputDir(anime, animeURLSuffix);
         DownloadQueueManager downloadQueueManager;
 
-        if (USE_ASYNC_DOWNLOADER) {
-            downloadQueueManager = (downloadURL, outputDir1, downloadFileName) -> addEpisodeToDownloadManagerQueue(downloadURL, outputDir1, downloadFileName + ".mp4");
-        } else {
-            downloadQueueManager = (downloadURL, outputDir1, episodeName) -> {
-                fileOutputStream.write((downloadURL + "\n").getBytes());
-                fileOutputStream.write(("  dir=" + animeOutputDir + "\n").getBytes());
-                fileOutputStream.write(("  out=" + episodeName + ".mp4\n").getBytes());
-            };
-        }
+        downloadQueueManager = (downloadURL, outputDir1, downloadFileName) -> addEpisodeToDownloadManagerQueue(downloadURL, outputDir1, downloadFileName + ".mp4");
 
         episodeDownloadLinkList.forEach(episodeDownloadLinkItem -> {
             try {
@@ -279,20 +259,6 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
                 e.printStackTrace();
             }
         });
-
-        if (!USE_ASYNC_DOWNLOADER) {
-            fileOutputStream.flush();
-            fileOutputStream.close();
-
-            new Thread() {
-                @Override
-                public void run() {
-                    super.run();
-                    downloadEpisodes(downloadListFileName);
-
-                }
-            }.start();
-        }
     }
 
     private String getAnimeOutputDir(Anime anime, String animeURLSuffix) {
@@ -319,11 +285,6 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
 
     private void queueEpisodeDownload(DownloadQueueManager downloadQueueManager, String outputDir, String episodeURL, String episodeName) throws IOException {
         DownloadQueueItem downloadQueueItem = new DownloadQueueItem(downloadQueueManager, outputDir, episodeURL, episodeName);
-
-        if (!USE_ASYNC_DOWNLOADER) {
-            downloadItem(downloadQueueItem);
-            return;
-        }
 
         for (DownloadQueueItem queueItem : downloadQueue) {
             if (queueItem.getEpisodeURL().equals(episodeURL)) {
@@ -353,32 +314,6 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
         downloadQueueItem.getDownloadQueueManager().addToQueue(downloadURL, downloadQueueItem.getOutputDir(), episodeName);
 
         navigateTo(KISSANIME_HOST);
-    }
-
-    private void downloadEpisodes(String downloadFileName) {
-        try {
-            Process p = Runtime.getRuntime().exec("/programming/kissanime-downloader/dl_gui.sh " + downloadFileName);
-
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-            // read the output from the command
-            System.out.println("Here is the standard output of the command:\n");
-            String s;
-            while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
-            }
-
-            // read any errors from the attempted command
-            System.out.println("Here is the standard error of the command (if any):\n");
-            while ((s = stdError.readLine()) != null) {
-                System.err.println(s);
-            }
-
-//            new EpisodeDownloader().download(downloadURL);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void addEpisodeToDownloadManagerQueue(String downloadURL, String outputDir, String downloadFileName) {
