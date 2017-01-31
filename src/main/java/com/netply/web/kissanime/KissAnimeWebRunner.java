@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Config(
@@ -103,15 +104,22 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
                 }
                 if (unprocessedEpisodes.isEmpty()) {
                     sleep(1000);
-                }
-                for (DownloadQueueItem unprocessedEpisode : unprocessedEpisodes) {
-                    animeQueueManager.increaseAttempts(unprocessedEpisode.getId());
-                    downloadItem(unprocessedEpisode);
+                } else {
+                    downloadNextUnprocessedEpisode(unprocessedEpisodes);
                 }
             } catch (Exception | Error e) {
                 e.printStackTrace();
                 sleep(5000);
             }
+        }
+    }
+
+    private void downloadNextUnprocessedEpisode(List<DownloadQueueItem> unprocessedEpisodes) throws IOException {
+        Optional<DownloadQueueItem> downloadQueueItemOptional = unprocessedEpisodes.stream().findFirst();
+        if (downloadQueueItemOptional.isPresent()) {
+            DownloadQueueItem unprocessedEpisode = downloadQueueItemOptional.get();
+            animeQueueManager.increaseAttempts(unprocessedEpisode.getId());
+            downloadItem(unprocessedEpisode);
         }
     }
 
