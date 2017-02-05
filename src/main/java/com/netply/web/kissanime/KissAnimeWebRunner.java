@@ -97,6 +97,7 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
                 List<Anime> unprocessedAnime = animeQueueManager.getUnprocessedAnime();
                 for (Anime anime : unprocessedAnime) {
                     findEpisodeList(anime);
+                    sleep(1000);
                 }
                 List<DownloadQueueItem> unprocessedEpisodes = animeQueueManager.getUnprocessedEpisodes();
                 while (unprocessedEpisodes.size() > 0 && currentDownloadQueue() >= MAX_CONCURRENT_DOWNLOADING_ITEMS) {
@@ -365,6 +366,7 @@ public class KissAnimeWebRunner extends Locomotive implements KissAnimeSearchCli
             }
         }
 
+        sleep(1000);
         return locomotive;
     }
 
